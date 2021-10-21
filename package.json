@@ -71,7 +71,7 @@
     "swagger-client": "^3.8.22",
     "swagger-ui": "^3.48.0",
     "traverse": "^0.6.6",
-    "webpack": "^5.37.0",
+    "webpack": "^5.55.1",
     "whatwg-fetch": "^2.0.3",
     "yaml-js": "^0.1.4"
   },
@@ -137,7 +137,7 @@
     "style-loader": "0.13.0",
     "uglifyjs-webpack-plugin": "^1.1.2",
     "url-loader": "^4.1.1",
-    "webpack": "^5.37.0",
+    "webpack": "^5.55.1",
     "webpack-bundle-size-analyzer": "^2.5.0",
     "webpack-dev-server": "^3.1.11",
     "worker-loader": "^0.7.1"
