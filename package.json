@@ -68,7 +68,7 @@
     "react-transition-group": "^1.1.1",
     "redux": "^3.x.x",
     "reselect": "^2.5.4",
-    "swagger-client": "^3.8.22",
+    "swagger-client": "^3.17.0",
     "swagger-ui": "^3.48.0",
     "traverse": "^0.6.6",
     "webpack": "^5.37.0",
