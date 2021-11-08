@@ -310,9 +310,7 @@ export default class Topbar extends React.Component {
   }
 
   render() {
-    const Link = getComponent("Link")
-    const TopbarInsert = getComponent("TopbarInsert")
-    let showClientsMenu = this.state.clients && this.state.clients.length
+     let showClientsMenu = this.state.clients && this.state.clients.length
 
     let makeMenuOptions = (name) => {
       let stateKey = `is${name}MenuOpen`
@@ -349,6 +347,5 @@ Topbar.propTypes = {
   errSelectors: PropTypes.object.isRequired,
   specActions: PropTypes.object.isRequired,
   topbarActions: PropTypes.object.isRequired,
-  getComponent: PropTypes.func.isRequired,
   getConfigs: PropTypes.func.isRequired
 }
