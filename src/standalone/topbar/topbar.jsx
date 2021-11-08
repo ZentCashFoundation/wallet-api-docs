@@ -2,28 +2,12 @@ import React from "react"
 import PropTypes from "prop-types"
 import Swagger from "swagger-client"
 import URL from "url"
-import "whatwg-fetch"
 import DropdownMenu from "./DropdownMenu"
 import reactFileDownload from "react-file-download"
-import YAML from "@kyleshockey/js-yaml"
+import YAML from "js-yaml"
 import beautifyJson from "json-beautify"
 
-import "react-dd-menu/dist/react-dd-menu.css"
-import Logo from "./logo_small.png"
-
-class OAS3GeneratorMessage extends React.PureComponent {
-  render() {
-    const { isShown } = this.props
-
-    if(!isShown) {
-      return null
-    }
-
-    return <div onClick={this.props.showModal} className="long-menu-message">
-      Beta feature; click for more info.
-    </div>
-  }
-}
+import Logo from "./logo_small.svg"
 
 export default class Topbar extends React.Component {
   constructor(props, context) {
@@ -50,6 +34,8 @@ export default class Topbar extends React.Component {
 
     const generatorUrl = this.getGeneratorUrl()
 
+    const isOAS3 = this.props.specSelectors.isOAS3()
+
     if(!generatorUrl) {
       return this.setState({
         clients: [],
@@ -67,7 +53,12 @@ export default class Topbar extends React.Component {
       this.setState({
         swaggerClient: client
       })
-      client.apis.clients.clientOptions({}, {
+
+      const clientGetter = isOAS3 ? client.apis.clients.clientLanguages : client.apis.clients.clientOptions
+      const serverGetter = isOAS3 ? client.apis.servers.serverLanguages : client.apis.servers.serverOptions
+
+
+      clientGetter({}, {
         // contextUrl is needed because swagger-client is curently
         // not building relative server URLs correctly
         contextUrl: generatorUrl
@@ -75,7 +66,8 @@ export default class Topbar extends React.Component {
       .then(res => {
         this.setState({ clients: res.body || [] })
       })
-      client.apis.servers.serverOptions({}, {
+
+      serverGetter({}, {
         // contextUrl is needed because swagger-client is curently
         // not building relative server URLs correctly
         contextUrl: generatorUrl
@@ -105,25 +97,12 @@ export default class Topbar extends React.Component {
         .then(res => res.text())
         .then(text => {
           this.props.specActions.updateSpec(
-            YAML.safeDump(YAML.safeLoad(text), {
+            YAML.dump(YAML.load(text), {
               lineWidth: -1
             })
           )
         })
     }
-  }
-
-  importFromFile = () => {
-    let fileToLoad = this.refs.fileLoadInput.files.item(0)
-    let fileReader = new FileReader()
-
-    fileReader.onload = fileLoadedEvent => {
-      let textFromFileLoaded = fileLoadedEvent.target.result
-      this.props.specActions.updateSpec(YAML.safeDump(YAML.safeLoad(textFromFileLoaded)))
-      this.hideModal()
-    }
-
-    fileReader.readAsText(fileToLoad, "UTF-8")
   }
 
   saveAsYaml = () => {
@@ -150,9 +129,9 @@ export default class Topbar extends React.Component {
     //// so convert and download
 
     // JSON String -> JS object
-    let jsContent = YAML.safeLoad(editorContent)
+    let jsContent = YAML.load(editorContent)
     // JS object -> YAML string
-    let yamlContent = YAML.safeDump(jsContent)
+    let yamlContent = YAML.dump(jsContent)
     this.downloadFile(yamlContent, `${fileName}.yaml`)
   }
 
@@ -167,7 +146,7 @@ export default class Topbar extends React.Component {
     }
 
     // JSON or YAML String -> JS object
-    let jsContent = YAML.safeLoad(editorContent)
+    let jsContent = YAML.load(editorContent)
     // JS Object -> pretty JSON string
     let prettyJsonContent = beautifyJson(jsContent, null, 2)
     this.downloadFile(prettyJsonContent, `${fileName}.json`)
@@ -185,8 +164,8 @@ export default class Topbar extends React.Component {
   convertToYaml = () => {
     // Editor content -> JS object -> YAML string
     let editorContent = this.props.specSelectors.specStr()
-    let jsContent = YAML.safeLoad(editorContent)
-    let yamlContent = YAML.safeDump(jsContent)
+    let jsContent = YAML.load(editorContent)
+    let yamlContent = YAML.dump(jsContent)
     this.props.specActions.updateSpec(yamlContent)
   }
 
@@ -199,12 +178,13 @@ export default class Topbar extends React.Component {
     }
 
     if(specSelectors.isOAS3()) {
-      swaggerClient.apis.default.generate1({}, {
+      // Generator 3 only has one generate endpoint for all types of things...
+      // since we're using the tags interface we may as well use the client reference to it
+      swaggerClient.apis.clients.generate({}, {
         requestBody: {
           spec: specSelectors.specJson(),
-          options: {
-            lang: name
-          }
+          type: type.toUpperCase(),
+          lang: name
         },
         contextUrl: this.getGeneratorUrl()
       }).then(res => {
@@ -330,10 +310,11 @@ export default class Topbar extends React.Component {
   }
 
   render() {
-    let { getComponent, specSelectors: { isOAS3 } } = this.props
+    let { getComponent, specSelectors, topbarActions } = this.props
     const Link = getComponent("Link")
     const TopbarInsert = getComponent("TopbarInsert")
-    const Modal = getComponent("TopbarModal")
+    const ImportFileMenuItem = getComponent("ImportFileMenuItem")
+    const ConvertDefinitionMenuItem = getComponent("ConvertDefinitionMenuItem")
 
     let showServersMenu = this.state.servers && this.state.servers.length
     let showClientsMenu = this.state.clients && this.state.clients.length
@@ -353,66 +334,20 @@ export default class Topbar extends React.Component {
       }
     }
 
-    const saveAsElements = []
-
-    if(isJson) {
-      saveAsElements.push(<li><button type="button" onClick={this.saveAsJson}>Save as JSON</button></li>)
-      saveAsElements.push(<li><button type="button" onClick={this.saveAsYaml}>Convert and save as YAML</button></li>)
-    } else {
-      saveAsElements.push(<li><button type="button" onClick={this.saveAsYaml}>Save as YAML</button></li>)
-      saveAsElements.push(<li><button type="button" onClick={this.saveAsJson}>Convert and save as JSON</button></li>)
-    }
-
     return (
-      <div>
+      <div className="swagger-editor-standalone">
         <div className="topbar">
           <div className="topbar-wrapper">
             <Link href="#">
-
-              <span>ZentCash Wallet API Documentation</span>
+              <img height="35" className="topbar-logo__img" src={ Logo } alt=""/>
             </Link>
             <TopbarInsert {...this.props} />
             { showClientsMenu ? <DropdownMenu className="long" {...makeMenuOptions("Generate Client")}>
-              <OAS3GeneratorMessage
-                showModal={() => this.showModal("generatorModal")}
-                hideModal={() => this.hideModal("generatorModal")}
-                isShown={isOAS3()} />
               { this.state.clients
                   .map((cli, i) => <li key={i}><button type="button" onClick={this.downloadGeneratedFile.bind(null, "client", cli)}>{cli}</button></li>) }
             </DropdownMenu> : null }
           </div>
         </div>
-        {this.state.fileLoadModal && <Modal className="modal" onCloseClick={() => this.hideModal("fileLoadModal")} styleName="modal-dialog-sm">
-          <div className="container modal-message">
-            <h2>Upload file</h2>
-            <input type="file" ref="fileLoadInput"></input>
-          </div>
-          <div className="right">
-            <button className="btn cancel" onClick={() => this.hideModal("fileLoadModal")}>Cancel</button>
-            <button className="btn" onClick={this.importFromFile}>Open file</button>
-          </div>
-        </Modal>
-        }
-        {this.state.generatorModal && <Modal className="modal" onCloseClick={() => this.hideModal("generatorModal")}>
-          <div className="modal-message">
-            <p>
-              Code generation for OAS3 is currently work in progress. The available languages is smaller than the for OAS/Swagger 2.0 and is constantly being updated.
-            </p>
-            <p>
-              If you encounter issues with the existing languages, please file a ticket at&nbsp;
-              <a href="https://github.com/swagger-api/swagger-codegen-generators" target={"_blank"}>swagger-codegen-generators</a>. Also, as this project highly depends on community contributions - please consider helping us migrate the templates for other languages. Details can be found at the same repository.
-            </p>
-            <p>
-              Thanks for helping us improve this feature.
-            </p>
-          </div>
-          <div className="right">
-            <button className="btn" onClick={() => this.hideModal("generatorModal")}>
-              Close
-            </button>
-          </div>
-        </Modal>
-        }
       </div>
     )
   }
@@ -422,6 +357,7 @@ Topbar.propTypes = {
   specSelectors: PropTypes.object.isRequired,
   errSelectors: PropTypes.object.isRequired,
   specActions: PropTypes.object.isRequired,
+  topbarActions: PropTypes.object.isRequired,
   getComponent: PropTypes.func.isRequired,
   getConfigs: PropTypes.func.isRequired
 }
