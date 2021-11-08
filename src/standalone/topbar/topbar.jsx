@@ -312,10 +312,7 @@ export default class Topbar extends React.Component {
   render() {
     const Link = getComponent("Link")
     const TopbarInsert = getComponent("TopbarInsert")
-
     let showClientsMenu = this.state.clients && this.state.clients.length
-
-    let definitionLanguage = this.getDefinitionLanguage()
 
     let makeMenuOptions = (name) => {
       let stateKey = `is${name}MenuOpen`
