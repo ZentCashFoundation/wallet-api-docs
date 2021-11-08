@@ -310,7 +310,18 @@ export default class Topbar extends React.Component {
   }
 
   render() {
-     let showClientsMenu = this.state.clients && this.state.clients.length
+    let { getComponent, specSelectors, topbarActions } = this.props
+    const Link = getComponent("Link")
+    const TopbarInsert = getComponent("TopbarInsert")
+    const ImportFileMenuItem = getComponent("ImportFileMenuItem")
+    const ConvertDefinitionMenuItem = getComponent("ConvertDefinitionMenuItem")
+
+    let showServersMenu = this.state.servers && this.state.servers.length
+    let showClientsMenu = this.state.clients && this.state.clients.length
+
+    let definitionLanguage = this.getDefinitionLanguage()
+
+    let isJson = definitionLanguage === "json"
 
     let makeMenuOptions = (name) => {
       let stateKey = `is${name}MenuOpen`
@@ -347,5 +358,6 @@ Topbar.propTypes = {
   errSelectors: PropTypes.object.isRequired,
   specActions: PropTypes.object.isRequired,
   topbarActions: PropTypes.object.isRequired,
+  getComponent: PropTypes.func.isRequired,
   getConfigs: PropTypes.func.isRequired
 }
