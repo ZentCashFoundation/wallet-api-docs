@@ -2124,7 +2124,7 @@
           }
         ],
         "paymentID": "38a8224a4c8bc5f060555cf9e89551dcd0cbb1c587a52b63e98f71280c362ee4",
-        "unlockTime": 2200000
+        "unlockTime": 0
       },
       "properties": {
         "destinations": {
@@ -2189,7 +2189,7 @@
         "unlockTime": {
           "type": "number",
           "description": "When to unlock the transaction. A user cannot spend locked funds until the unlock time has been reached. Defaults to zero if not given. Can use either a block height, or a unix timestamp.",
-          "example": 1200000,
+          "example": 10,
           "default": 0,
           "format": "uint64"
         },
